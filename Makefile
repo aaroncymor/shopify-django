@@ -2,7 +2,7 @@ include .env
 export $(shell sed 's/=.*//' .env)
 
 SHELL := /bin/sh
-PROJECTNAME ?= project_name
+PROJECTNAME ?= shopify_django
 APP_NAME := $(PROJECTNAME)
 BACKEND_APP_NAME := $(APP_NAME)-backend
 
@@ -50,17 +50,23 @@ migrate:
 	docker exec -it $(BACKEND_APP_NAME) $(SHELL) "-c" \
 	"python manage.py migrate"
 
+docker-clean:
+
 build-dev:
-	DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker-compose -f docker-compose.yml up --build -d
+	DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose -f docker-compose.yml up --build -d
+	@docker container prune -f
+	@docker image prune -f
 
 build-prod:
-	DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker-compose -f docker-compose.prod.yml up --build -d
+	DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose -f docker-compose.prod.yml up --build -d
+	@docker container prune -f
+	@docker image prune -f
 
 stop-dev:
-	@docker-compose -f docker-compose.yml down
+	@docker compose -f docker-compose.yml down
 
 stop-prod:
-	@docker-compose -f docker-compose.prod.yml down
+	@docker compose -f docker-compose.prod.yml down
 
 all: help
 

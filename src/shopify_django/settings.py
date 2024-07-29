@@ -14,9 +14,12 @@ from os import getenv as os_getenv, path as os_path
 from django.core.management.utils import get_random_secret_key
 from pathlib import Path
 
+from jinja2 import FileSystemLoader
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+print("BASE_DIR", BASE_DIR)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -42,10 +45,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 3rd-party apps
+    # Local
+    "products.apps.ProductsConfig",
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -59,7 +66,9 @@ ROOT_URLCONF = 'shopify_django.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -69,6 +78,16 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
             ],
         },
+    },
+    {
+        "BACKEND": "django.template.backends.jinja2.Jinja2",
+        "DIRS": [
+            BASE_DIR / 'jinja',
+        ],
+        'OPTIONS': {
+            'enable_async': True,
+            'loader': FileSystemLoader(BASE_DIR / 'jinja')
+        }
     },
 ]
 
@@ -148,3 +167,10 @@ REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
+
+# Shopify settings
+
+SHOPIFY_STORE_URL = os_getenv("SHOPIFY_STORE_URL")
+SHOPIFY_API_CLIENT = os_getenv("SHOPIFY_API_CLIENT")
+SHOPIFY_API_SECRET = os_getenv("SHOPIFY_API_SECRET")
+SHOPIFY_API_VERSION = os_getenv("SHOPIFY_API_VERSION")
