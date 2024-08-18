@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     # 3rd-party apps
     'django_extensions',
     # Local
+    "core.apps.CoreConfig",
     "products.apps.ProductsConfig",
 ]
 
@@ -60,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "core.middleware.ShopifyAccessTokenMiddleware",
 ]
 
 ROOT_URLCONF = 'shopify_django.urls'
