@@ -1,84 +1,27 @@
 # Built-in
-import os
-import binascii
-from typing import List, Dict
+from urllib.parse import urlencode
 
 # Django
 from django.shortcuts import render, redirect
-from django.conf import settings
-
-# 3rd Party
-import shopify
-from shopify import Session as ShopifySession
 
 # Local
+from core import ShopifyClient
+
 from .forms import ProductForm
 
 
-class ShopifyClient:
-
-    _shopify = None
-    shopify_session = None
-    auth_url = ""
-    shop = None
-
-    def __new__(cls):
-
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(ShopifyClient, cls).__new__(cls)
-        else:
-            if hasattr(cls.instance, 'access_token') and cls.instance.access_token:
-                instance = cls.instance
-                access_token = instance.access_token
-                print("NEW PHASE ACCESS TOKEN", access_token)
-
-                _shopify = instance._shopify
-                if access_token and _shopify:
-                    shopify_session = ShopifySession(
-                        settings.SHOPIFY_STORE_URL, settings.SHOPIFY_API_VERSION,
-                        access_token)
-                    shopify.ShopifyResource.activate_session(shopify_session)
-                    cls.instance._shopify = shopify
-                    print("DONE SETTING NEW SHOPIFY INSTANCE")
-        return cls.instance
-
-    def __del__(self):
-        print("Clearing Shopify Session")
-        shopify.ShopifyResource.clear_session()
-
-    def __init__(self):
-        ShopifySession.setup(
-            api_key=settings.SHOPIFY_API_CLIENT,
-            secret=settings.SHOPIFY_API_SECRET
-        )
-
-    def init_auth(self, scopes: List[str] = [], redirect_uri: str = ""):
-        shopify_session = ShopifySession(
-            settings.SHOPIFY_STORE_URL, settings.SHOPIFY_API_VERSION)
-        auth_url = shopify_session.create_permission_url(scopes, redirect_uri)
-        return auth_url
-
-    def activate_session(self, shopify_query_params: Dict[str, List[str]]):
-
-        shopify_session = ShopifySession(
-            settings.SHOPIFY_STORE_URL, settings.SHOPIFY_API_VERSION)
-        access_token = shopify_session.request_token(shopify_query_params)
-        self.access_token = access_token
-        print("ACCESS TOKEN", access_token)
-
-        shopify_session = ShopifySession(
-            settings.SHOPIFY_STORE_URL, settings.SHOPIFY_API_VERSION,
-            access_token)
-        shopify.ShopifyResource.activate_session(shopify_session)
-
-        # set shop instance
-        self._shopify = shopify
-
 # Create your views here.
-def index(request):
+def verify(request, *args, **kwargs):
     # reference: https://github.com/Shopify/shopify_python_api
 
+    print("VERIFY REQUEST", request)
+    print("VERIFY KWARGS", args)
+    print("VERIFY ARGS", kwargs)
+    request_params = request.GET.copy()
+    print("VERIFY_PARAMS", request_params)
+
     if request.method == 'GET':
+        print("GET METHOD")
         try:
             # # hmac, #tstamp
             # hmac = request.GET.get('hmac', None)
@@ -105,9 +48,12 @@ def index(request):
             shopify_client = ShopifyClient()
             auth_url = shopify_client.init_auth(scopes, redirect_uri)
             return redirect(auth_url)
+            # return redirect('products:redirected')
 
         except KeyError as ke:
             print("KeyError", ke)
+    else:
+        print("NOT GET METHOD EYYYY")
 
     return render(request, 'products/index.html')
 
@@ -138,6 +84,19 @@ def redirected(request, *args, **kwargs):
     shopify_client.activate_session(request_params)
     print("REDIRECTED ACCESS TOKEN", shopify_client.access_token)
 
+    goto_page = request.session.get('goto', "")
+    if goto_page == 'create_or_edit_product':
+        print("GOING TO CREATE OR EDIT PRODUCT")
+        return redirect('products:create_or_edit')
+
+    # default goto is list_product
+    print("GOING TO DEFAULT PAGE...")
+    return redirect('products:list')
+
+
+def product_list(request, *args, **kwargs):
+
+    shopify_client = ShopifyClient()
     shopify_inst = shopify_client._shopify
     products = shopify_inst.Product.find()
 
@@ -146,7 +105,7 @@ def redirected(request, *args, **kwargs):
     })
 
 
-def product_form_view(request):
+def product_create_or_edit(request, *args, **kwargs):
     if request.method == "POST":
         form = ProductForm(request.POST)
 
@@ -178,7 +137,6 @@ def product_form_view(request):
             # new_product.status = status
             # new_product.price = 19.99
             new_product.save()
-
             return render(request, 'products/product_form_success.html')
         else:
             # Handle form errors
