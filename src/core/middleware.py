@@ -20,13 +20,13 @@ class ShopifyAccessTokenMiddleware:
         func_name = view_func.__name__
         print("FNAME", func_name)
 
-        DONT_REDIRECT = ['verify', 'redirected']
+        EXCLUDE_REDIRECT = ['verify', 'redirected']
 
         shopify_client = ShopifyClient()
-        if not hasattr(shopify_client, 'access_token') and func_name not in DONT_REDIRECT:
+        if not hasattr(shopify_client, 'access_token') and func_name not in EXCLUDE_REDIRECT:
             if func_name == "product_list":
                 request.session['goto'] = 'list_product'
             elif func_name == "product_create_or_edit":
                 request.session['goto'] = 'create_or_edit_product'
 
-            return redirect('products:verify')  # Assuming 'product:verify' is your URL name
+            return redirect('core:verify')  # Assuming 'product:verify' is your URL name
