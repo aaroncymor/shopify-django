@@ -1,11 +1,17 @@
+# Built-in
 import os
 import binascii
 
+# Django
 from django.shortcuts import render, redirect
 from django.conf import settings
 
+# 3rd Party
 import shopify
 from shopify import Session as ShopifySession
+
+# Local
+from .forms import ProductForm
 
 
 # Create your views here.
@@ -59,7 +65,33 @@ def redirected(request, *args, **kwargs):
     shopify.ShopifyResource.activate_session(newSession)
 
     shop = shopify.Shop.current()
-    product = shopify.Product.find()
-    print(product)
+    products = shopify.Product.find()
+    print(products)
 
-    return render(request, 'products/redirected.html')
+    return render(request, 'products/product_list.html', context={
+        "products": products
+    })
+
+
+def product_form_view(request):
+    if request.method == "POST":
+        form = ProductForm(request.POST)
+
+        if form.is_valid():
+            # Handle form data, e.g., save to database
+            title = form.cleaned_data['title']
+            body_title = form.cleaned_data['body_html']
+            vendor = form.cleaned_data['vendor']
+            product_type = form.cleaned_data['product_type']
+            status = form.cleaned_data['status']
+
+            # do something with data
+            print("INSERTING...")
+
+            return render(request, 'products/product_form_success.html')
+        else:
+            # Handle form errors
+            return render(request, 'products/product_create.html', {'form': form})
+    else:
+        form = ProductForm()
+        return render(request, 'products/product_create.html', {'form': form})

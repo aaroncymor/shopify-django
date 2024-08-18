@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Aa Sells - Products</h1>
+
+    {% if products%}
+        {% for product in products %}
+            {{ product.id }}
+            {{ product.title }}
+            {{ product.vendor }}
+        {% endfor %}
+    {% endif %}
+{% endblock %}
+
